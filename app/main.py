@@ -4,10 +4,11 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
+from app.rag import RAG
 
 app = FastAPI(
     title="SaaS Support RAG",
-    description="Citation-grounded helpdesk answers over a SaaS knowledge base.",
+    description="Citation-grounded helpdesk answers over a SaaS knowledge base (BM25).",
     version="1.0.0",
 )
 
@@ -19,18 +20,17 @@ class AskIn(BaseModel):
 
 @app.get("/health")
 def health() -> dict:
-    return {"status": "ok"}
+    return {"status": "ok", "articles": len(RAG.articles)}
 
 
 @app.post("/ask")
 def ask(body: AskIn) -> dict:
-    # Placeholder until the retriever lands; keeps the demo UI functional.
-    return {
-        "answer": "The knowledge base is not connected yet.",
-        "citations": [],
-        "sources": [],
-        "mode": "placeholder",
-    }
+    return RAG.answer(body.question, top_k=body.top_k)
+
+
+@app.get("/eval")
+def evaluate() -> dict:
+    return RAG.evaluate()
 
 
 DEMO_HTML = """<!doctype html>
@@ -47,7 +47,7 @@ DEMO_HTML = """<!doctype html>
  .src{font-size:13px;color:#4b5563} .meta{font-size:12px;color:#9ca3af;margin-top:8px}
 </style></head><body>
 <h1>FlowDesk Support Assistant</h1>
-<p class="sub">Ask a question about the FlowDesk help centre. Answers will be grounded in knowledge-base articles with citations.</p>
+<p class="sub">Ask a question about the FlowDesk help centre. Answers are grounded in knowledge-base articles with citations.</p>
 <form id="f"><input id="q" placeholder="e.g. How do I verify webhook signatures?" required><button>Ask</button></form>
 <div class="chips">
  <button type="button">How do I reset my password?</button>
@@ -55,7 +55,7 @@ DEMO_HTML = """<!doctype html>
  <button type="button">Can I get a refund on an annual plan?</button>
 </div>
 <div id="out"></div>
-<p class="meta"><a href="/docs">API docs</a></p>
+<p class="meta"><a href="/docs">API docs</a> · <a href="/eval">Retrieval eval</a></p>
 <script>
 const out=document.getElementById('out'), q=document.getElementById('q');
 async function ask(text){

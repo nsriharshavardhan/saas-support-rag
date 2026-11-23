@@ -1,0 +1,105 @@
+{
+  "product": "FlowDesk",
+  "articles": [
+    {
+      "id": "kb-001",
+      "category": "account",
+      "title": "Resetting your password",
+      "content": "To reset your password, open the FlowDesk login page and click 'Forgot password'. Enter the email address linked to your account and we will send a reset link that expires after 30 minutes. If the email does not arrive, check your spam folder or ask your workspace admin to resend the invite."
+    },
+    {
+      "id": "kb-002",
+      "category": "account",
+      "title": "Enabling two-factor authentication (2FA)",
+      "content": "Go to Settings > Security and select 'Enable two-factor authentication'. Scan the QR code with an authenticator app such as Google Authenticator or Authy, then enter the six-digit code to confirm. Save your backup recovery codes somewhere safe in case you lose your phone."
+    },
+    {
+      "id": "kb-003",
+      "category": "billing",
+      "title": "Changing or upgrading your subscription plan",
+      "content": "Workspace owners can change plans under Settings > Billing > Plan. Upgrades take effect immediately and are prorated, so if you upgrade mid-month you are only charged the difference for the remaining days of the billing cycle. Downgrades apply at the start of the next billing period, and any features above the new plan limit become read-only."
+    },
+    {
+      "id": "kb-004",
+      "category": "billing",
+      "title": "Requesting a refund",
+      "content": "Annual plans can be refunded in full within 14 days of purchase. Monthly plans are not refunded, but you can cancel at any time to stop future charges. To request a refund, email billing@flowdesk.example with your invoice number."
+    },
+    {
+      "id": "kb-005",
+      "category": "billing",
+      "title": "Downloading invoices and updating payment details",
+      "content": "Invoices are available under Settings > Billing > Invoices and can be downloaded as PDF. To update your credit card or add a GST/ABN number to invoices, click 'Payment method' on the same page. All prices are shown in AUD and include GST for Australian customers."
+    },
+    {
+      "id": "kb-006",
+      "category": "integrations",
+      "title": "Connecting Slack notifications",
+      "content": "Open Integrations > Slack and click 'Add to Slack'. Choose the channel that should receive ticket notifications and approve the permissions. You can filter notifications by priority so only urgent tickets are posted to the channel."
+    },
+    {
+      "id": "kb-007",
+      "category": "integrations",
+      "title": "Using the REST API and API keys",
+      "content": "Generate an API key under Settings > Developer > API keys. Send it in the Authorization header as a Bearer token. The API is rate limited to 120 requests per minute per workspace; requests above the limit receive HTTP 429 with a Retry-After header."
+    },
+    {
+      "id": "kb-008",
+      "category": "integrations",
+      "title": "Setting up webhooks",
+      "content": "Webhooks send a POST request to your URL whenever a ticket is created, updated or closed. Configure them under Settings > Developer > Webhooks. Each request is signed with an HMAC-SHA256 signature in the X-FlowDesk-Signature header so you can verify it came from us. Failed deliveries are retried five times with exponential backoff."
+    },
+    {
+      "id": "kb-009",
+      "category": "workspace",
+      "title": "Inviting team members and managing roles",
+      "content": "Admins can invite teammates from Settings > Members > Invite. Available roles are Owner, Admin, Agent and Viewer. Agents can reply to tickets, Viewers have read-only access, and only Owners can manage billing or delete the workspace."
+    },
+    {
+      "id": "kb-010",
+      "category": "workspace",
+      "title": "Configuring SLA policies",
+      "content": "SLA policies define first-response and resolution targets per ticket priority. Create them under Settings > SLA. Tickets approaching a breach are highlighted in amber, and breached tickets turn red and can trigger an escalation email to the team lead."
+    },
+    {
+      "id": "kb-011",
+      "category": "data",
+      "title": "Importing tickets from CSV or another helpdesk",
+      "content": "Use Settings > Data > Import to upload a CSV file with columns subject, description, requester_email, status and created_at. Imports from Zendesk and Freshdesk are also supported through their APIs. Large imports run in the background and you will receive an email when they finish."
+    },
+    {
+      "id": "kb-012",
+      "category": "data",
+      "title": "Data residency, security and deleting your data",
+      "content": "Customer data for Australian workspaces is stored in the Sydney region and encrypted at rest with AES-256 and in transit with TLS 1.2+. Owners can request permanent deletion of all workspace data from Settings > Data > Delete workspace; deletion completes within 30 days."
+    },
+    {
+      "id": "kb-013",
+      "category": "troubleshooting",
+      "title": "Emails from customers are not creating tickets",
+      "content": "Check that your support address forwards to your unique FlowDesk inbound address shown in Settings > Channels > Email. Verify SPF and DKIM records if replies are going to spam. Emails larger than 25 MB are rejected and the sender receives a bounce notice."
+    },
+    {
+      "id": "kb-014",
+      "category": "troubleshooting",
+      "title": "The dashboard is slow or not loading",
+      "content": "Clear your browser cache and disable extensions that block scripts. FlowDesk supports the latest two versions of Chrome, Edge, Firefox and Safari. You can check live platform status and incidents at status.flowdesk.example."
+    }
+  ],
+  "eval": [
+    {"question": "How do I reset my password?", "expected": "kb-001"},
+    {"question": "I lost my phone, how does 2FA backup work?", "expected": "kb-002"},
+    {"question": "Will I be charged extra if I upgrade mid-month?", "expected": "kb-003"},
+    {"question": "Can I get my money back on an annual plan?", "expected": "kb-004"},
+    {"question": "Where can I add our ABN to the invoice?", "expected": "kb-005"},
+    {"question": "Post urgent tickets to a Slack channel", "expected": "kb-006"},
+    {"question": "What is the API rate limit?", "expected": "kb-007"},
+    {"question": "How do I verify the webhook signature?", "expected": "kb-008"},
+    {"question": "What can a viewer role do?", "expected": "kb-009"},
+    {"question": "Escalate tickets that breach the SLA", "expected": "kb-010"},
+    {"question": "Import tickets from Zendesk", "expected": "kb-011"},
+    {"question": "Is my data stored in Australia?", "expected": "kb-012"},
+    {"question": "Customer emails are not turning into tickets", "expected": "kb-013"},
+    {"question": "Dashboard is not loading in my browser", "expected": "kb-014"}
+  ]
+}
