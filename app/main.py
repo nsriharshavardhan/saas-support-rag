@@ -1,6 +1,8 @@
 """FastAPI service for the FlowDesk helpdesk RAG assistant."""
 
-from fastapi import FastAPI
+import time
+
+from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
@@ -9,8 +11,16 @@ from app.rag import RAG, Article
 app = FastAPI(
     title="SaaS Support RAG",
     description="Citation-grounded helpdesk answers over a SaaS knowledge base (BM25 + optional LLM).",
-    version="1.1.0",
+    version="1.3.0",
 )
+
+
+@app.middleware("http")
+async def add_process_time(request: Request, call_next):
+    start = time.perf_counter()
+    response = await call_next(request)
+    response.headers["X-Process-Time-Ms"] = f"{(time.perf_counter() - start) * 1000:.2f}"
+    return response
 
 
 class AskIn(BaseModel):
@@ -85,7 +95,7 @@ async function ask(text){
   const srcs=(d.sources||[]).map(s=>`<li>[${esc(s.id)}] ${esc(s.title)} <span class="meta">score ${s.score}</span></li>`).join('');
   out.innerHTML=`<div class="card"><div>${esc(d.answer||d.detail)}</div>
     ${srcs?`<p class="src"><b>Sources</b></p><ul class="src">${srcs}</ul>`:''}
-    <div class="meta">mode: ${esc(d.mode||'-')} · ${Math.round(performance.now()-t0)} ms round trip</div></div>`;
+    <div class="meta">mode: ${esc(d.mode||'-')} · ${Math.round(performance.now()-t0)} ms round trip · server ${r.headers.get('X-Process-Time-Ms')||'?'} ms</div></div>`;
 }
 document.getElementById('f').onsubmit=e=>{e.preventDefault();ask(q.value)};
 document.querySelectorAll('.chips button').forEach(b=>b.onclick=()=>{q.value=b.textContent;ask(b.textContent)});

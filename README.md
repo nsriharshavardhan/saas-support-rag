@@ -2,11 +2,15 @@
 
 [![CI](https://github.com/nsriharshavardhan/saas-support-rag/actions/workflows/ci.yml/badge.svg)](https://github.com/nsriharshavardhan/saas-support-rag/actions/workflows/ci.yml)
 
-**Live demo:** https://saas-support-rag.onrender.com
+**Live demo:** https://saas-support-rag.onrender.com · [API docs](https://saas-support-rag.onrender.com/docs) · [Retrieval eval](https://saas-support-rag.onrender.com/eval)
+
+> Free-tier Render services sleep when idle, so the first request can take ~30–50 s to wake up.
 
 A help centre assistant for a fictional B2B SaaS product (**FlowDesk**). It answers customer questions
 **only from knowledge-base articles** and cites them (e.g. `[kb-007]`). If nothing relevant is found, it says so
 instead of making something up.
+
+<!-- Add a screenshot after deploying: docs/screenshot.png -->
 
 ## Features
 
@@ -17,6 +21,7 @@ instead of making something up.
 - **Live knowledge-base ingestion.** `POST /articles` adds or updates an article and rebuilds the index in memory.
 - **Built-in evaluation.** `GET /eval` reports top-1 and top-3 retrieval accuracy on a labelled question set.
   The test suite fails if top-1 accuracy drops below 85%.
+- **Observability.** Every response carries an `X-Process-Time-Ms` header.
 - **Delivery:** pytest suite, GitHub Actions CI (tests + Docker build), Dockerfile, and a one-click `render.yaml`.
 
 ## API

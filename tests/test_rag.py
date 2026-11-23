@@ -95,3 +95,7 @@ def test_llm_failure_falls_back_to_extractive(fresh_rag, monkeypatch):
     assert result["mode"] == "extractive"
     assert result["citations"] == ["kb-001"]
 
+
+def test_latency_header_present():
+    r = client.get("/health")
+    assert float(r.headers["X-Process-Time-Ms"]) >= 0
