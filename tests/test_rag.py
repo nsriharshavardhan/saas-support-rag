@@ -1,7 +1,8 @@
+import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.rag import RAG, tokenize
+from app.rag import RAG, Article, HelpdeskRAG, tokenize
 
 client = TestClient(app)
 
@@ -48,4 +49,37 @@ def test_eval_endpoint():
     r = client.get("/eval")
     assert r.status_code == 200
     assert r.json()["top3_accuracy"] >= 0.9
+
+
+@pytest.fixture
+def fresh_rag(monkeypatch):
+    """Isolated RAG instance so ingestion tests don't leak into other tests."""
+    rag = HelpdeskRAG()
+    monkeypatch.setattr("app.main.RAG", rag)
+    return rag
+
+
+def test_ingested_article_is_retrievable(fresh_rag):
+    fresh_rag.add_article(
+        Article(
+            id="kb-csv",
+            category="data",
+            title="Exporting reports to CSV",
+            content="Open Reports, choose a date range and click Export CSV to download ticket metrics.",
+        )
+    )
+    assert fresh_rag.answer("How do I export CSV?")["citations"] == ["kb-csv"]
+
+
+def test_post_articles_endpoint(fresh_rag):
+    payload = {
+        "id": "kb-015",
+        "category": "workspace",
+        "title": "Setting business hours",
+        "content": "Go to Settings > Business hours to define working days so SLA timers pause overnight.",
+    }
+    r = client.post("/articles", json=payload)
+    assert r.status_code == 201
+    assert client.post("/ask", json={"question": "set business hours"}).json()["citations"] == ["kb-015"]
+    assert client.post("/articles", json={**payload, "id": "Bad ID!"}).status_code == 422
 

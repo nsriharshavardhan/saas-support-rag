@@ -105,6 +105,12 @@ class HelpdeskRAG:
     def rebuild_index(self) -> None:
         self.index.build([a.text for a in self.articles])
 
+    def add_article(self, article: Article) -> None:
+        """Add or replace an article and refresh the in-memory index."""
+        self.articles = [a for a in self.articles if a.id != article.id]
+        self.articles.append(article)
+        self.rebuild_index()
+
     # ---- retrieval ------------------------------------------------------
     def search(self, query: str, top_k: int = 3) -> list[tuple[Article, float]]:
         scores = self.index.score(query)

@@ -4,18 +4,25 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
-from app.rag import RAG
+from app.rag import RAG, Article
 
 app = FastAPI(
     title="SaaS Support RAG",
-    description="Citation-grounded helpdesk answers over a SaaS knowledge base (BM25).",
-    version="1.0.0",
+    description="Citation-grounded helpdesk answers over a SaaS knowledge base (BM25 + optional LLM).",
+    version="1.1.0",
 )
 
 
 class AskIn(BaseModel):
     question: str = Field(..., min_length=3, max_length=500, examples=["How do I reset my password?"])
     top_k: int = Field(3, ge=1, le=10)
+
+
+class ArticleIn(BaseModel):
+    id: str = Field(..., pattern=r"^[a-z0-9-]{3,40}$", examples=["kb-015"])
+    category: str = Field(..., min_length=2, max_length=40)
+    title: str = Field(..., min_length=3, max_length=200)
+    content: str = Field(..., min_length=20, max_length=5000)
 
 
 @app.get("/health")
@@ -26,6 +33,17 @@ def health() -> dict:
 @app.post("/ask")
 def ask(body: AskIn) -> dict:
     return RAG.answer(body.question, top_k=body.top_k)
+
+
+@app.get("/articles")
+def list_articles() -> list[dict]:
+    return [{"id": a.id, "category": a.category, "title": a.title} for a in RAG.articles]
+
+
+@app.post("/articles", status_code=201)
+def add_article(body: ArticleIn) -> dict:
+    RAG.add_article(Article(**body.model_dump()))
+    return {"status": "indexed", "id": body.id, "articles": len(RAG.articles)}
 
 
 @app.get("/eval")
@@ -55,7 +73,7 @@ DEMO_HTML = """<!doctype html>
  <button type="button">Can I get a refund on an annual plan?</button>
 </div>
 <div id="out"></div>
-<p class="meta"><a href="/docs">API docs</a> · <a href="/eval">Retrieval eval</a></p>
+<p class="meta"><a href="/docs">API docs</a> · <a href="/eval">Retrieval eval</a> · <a href="/articles">Articles</a></p>
 <script>
 const out=document.getElementById('out'), q=document.getElementById('q');
 async function ask(text){
