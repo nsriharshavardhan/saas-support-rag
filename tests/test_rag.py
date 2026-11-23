@@ -83,3 +83,15 @@ def test_post_articles_endpoint(fresh_rag):
     assert client.post("/ask", json={"question": "set business hours"}).json()["citations"] == ["kb-015"]
     assert client.post("/articles", json={**payload, "id": "Bad ID!"}).status_code == 422
 
+
+def test_llm_failure_falls_back_to_extractive(fresh_rag, monkeypatch):
+    monkeypatch.setenv("GEMINI_API_KEY", "invalid-test-key")
+
+    def boom(*args, **kwargs):
+        raise RuntimeError("network disabled in tests")
+
+    monkeypatch.setattr("app.rag.httpx.post", boom)
+    result = fresh_rag.answer("How do I reset my password?")
+    assert result["mode"] == "extractive"
+    assert result["citations"] == ["kb-001"]
+

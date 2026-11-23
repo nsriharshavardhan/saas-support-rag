@@ -12,6 +12,9 @@ instead of making something up.
 
 - **BM25 retrieval written from scratch.** No vector DB needed, deterministic, and easy to explain.
 - **Citation-grounded answers** with a minimum-score "no match" guard against hallucinated replies.
+- **Optional LLM synthesis.** Set `GEMINI_API_KEY` or `OPENAI_API_KEY` and the top 2 articles are sent to
+  the model as context. With no key, or if the call fails, it falls back to a local extractive answer, so CI and demos never break.
+- **Live knowledge-base ingestion.** `POST /articles` adds or updates an article and rebuilds the index in memory.
 - **Built-in evaluation.** `GET /eval` reports top-1 and top-3 retrieval accuracy on a labelled question set.
   The test suite fails if top-1 accuracy drops below 85%.
 - **Delivery:** pytest suite, GitHub Actions CI (tests + Docker build), Dockerfile, and a one-click `render.yaml`.
@@ -22,6 +25,8 @@ instead of making something up.
 |--------|-------------|-----------------------------------------------|
 | GET    | `/`         | Browser demo UI                               |
 | POST   | `/ask`      | `{"question": "...", "top_k": 3}` → answer + citations + sources |
+| GET    | `/articles` | List indexed articles                         |
+| POST   | `/articles` | Add or replace an article and re-index        |
 | GET    | `/eval`     | Retrieval accuracy report                     |
 | GET    | `/health`   | Health check                                  |
 
@@ -50,6 +55,7 @@ docker build -t saas-support-rag . && docker run -p 8000:8000 saas-support-rag
 
 1. Sign in to [Render](https://render.com) with GitHub, then choose **New → Blueprint** and pick this repo.
 2. Render reads `render.yaml`, installs dependencies and starts `uvicorn`.
+3. Optional: add `GEMINI_API_KEY` under **Environment** to turn on LLM answers.
 
 ## Design notes
 

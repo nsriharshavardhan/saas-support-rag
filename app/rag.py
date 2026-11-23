@@ -2,16 +2,25 @@
 
 A small, dependency-free BM25 retriever over a JSON knowledge base. Answers are
 always grounded in retrieved articles and returned with ``[kb-id]`` citations.
+If an LLM API key is configured, the top articles are passed to the model for a
+more natural reply; otherwise a deterministic extractive answer is used so tests,
+CI and free-tier demos work without any secrets.
 """
 
 from __future__ import annotations
 
 import json
+import logging
 import math
+import os
 import re
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
+
+import httpx
+
+logger = logging.getLogger(__name__)
 
 DATA_PATH = Path(__file__).resolve().parent.parent / "data" / "helpdesk_kb.json"
 
@@ -131,6 +140,43 @@ class HelpdeskRAG:
         keep = sorted(ranked[:2])  # restore original order for readability
         return " ".join(s for _, s in keep) + f" [{best.id}]"
 
+    def _llm_answer(self, query: str, hits: list[tuple[Article, float]]) -> str | None:
+        """Optional LLM synthesis. Returns None on any failure so we can fall back."""
+        context = "\n\n".join(f"[{a.id}] {a.title}\n{a.content}" for a, _ in hits[:2])
+        prompt = (
+            f"You are a support assistant for {self.product}. Answer the customer's "
+            "question in 2-3 sentences using ONLY the articles below. Cite the article "
+            "id in square brackets, e.g. [kb-001]. If the articles do not contain the "
+            f"answer, say you don't know.\n\nArticles:\n{context}\n\nQuestion: {query}"
+        )
+        try:
+            if key := os.getenv("GEMINI_API_KEY"):
+                model = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+                r = httpx.post(
+                    f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+                    params={"key": key},
+                    json={"contents": [{"parts": [{"text": prompt}]}]},
+                    timeout=20,
+                )
+                r.raise_for_status()
+                return r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+            if key := os.getenv("OPENAI_API_KEY"):
+                r = httpx.post(
+                    "https://api.openai.com/v1/chat/completions",
+                    headers={"Authorization": f"Bearer {key}"},
+                    json={
+                        "model": os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+                        "messages": [{"role": "user", "content": prompt}],
+                        "temperature": 0.2,
+                    },
+                    timeout=20,
+                )
+                r.raise_for_status()
+                return r.json()["choices"][0]["message"]["content"].strip()
+        except Exception as exc:  # network errors, quota, bad key, schema change
+            logger.warning("LLM synthesis failed, using local fallback: %s", exc)
+        return None
+
     def answer(self, query: str, top_k: int = 3) -> dict:
         hits = self.search(query, top_k=top_k)
         if not hits or hits[0][1] < MIN_SCORE:
@@ -142,14 +188,15 @@ class HelpdeskRAG:
                 "mode": "no_match",
             }
 
+        llm_text = self._llm_answer(query, hits)
         return {
-            "answer": self._extractive_answer(query, hits),
+            "answer": llm_text or self._extractive_answer(query, hits),
             "citations": [hits[0][0].id],
             "sources": [
                 {"id": a.id, "title": a.title, "category": a.category, "score": s}
                 for a, s in hits
             ],
-            "mode": "extractive",
+            "mode": "llm" if llm_text else "extractive",
         }
 
     # ---- evaluation -----------------------------------------------------
